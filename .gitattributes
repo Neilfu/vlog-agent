@@ -1,0 +1,172 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Python files
+*.py text diff=python
+*.pyx text diff=python
+*.pxd text diff=python
+
+# Web files
+*.html text diff=html
+*.css text diff=css
+*.js text diff=javascript
+*.jsx text diff=javascript
+*.ts text diff=typescript
+*.tsx text diff=typescript
+*.json text
+*.xml text
+*.sql text
+*.md text diff=markdown
+
+# Configuration files
+*.yml text
+*.yaml text
+*.toml text
+*.ini text
+*.cfg text
+*.conf text
+
+# Documentation
+*.md text diff=markdown
+*.rst text diff=rst
+*.txt text
+
+# Shell scripts
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+*.fish text eol=lf
+
+# Windows batch files
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Docker files
+Dockerfile text
+docker-compose.yml text
+.dockerignore text
+
+# Python specific
+requirements.txt text
+setup.py text
+setup.cfg text
+pyproject.toml text
+Pipfile text
+Pipfile.lock text
+
+# Node.js specific
+package.json text
+package-lock.json text
+yarn.lock text
+.npmignore text
+
+# Database
+*.sql text
+*.db binary
+*.sqlite binary
+*.sqlite3 binary
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text
+*.webp binary
+
+# Audio/Video files
+*.mp3 binary
+*.mp4 binary
+*.wav binary
+*.avi binary
+*.mov binary
+*.mkv binary
+*.flv binary
+*.webm binary
+
+# Archive files
+*.zip binary
+*.tar binary
+*.gz binary
+*.bz2 binary
+*.xz binary
+*.7z binary
+*.rar binary
+
+# Executable files
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.pyd binary
+
+# Font files
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+
+# AI model files
+*.pkl binary
+*.h5 binary
+*.model binary
+*.onnx binary
+*.pb binary
+*.ckpt binary
+
+# IDE files
+*.suo binary
+*.ntvs* binary
+*.njsproj binary
+*.sln binary
+*.sw? binary
+*.sublime-* text
+.vscode/settings.json text
+.idea/workspace.xml text
+
+# Git files
+.gitignore text
+.gitattributes text
+.gitmodules text
+
+# Documentation files
+CHANGELOG.md text
+README.md text
+LICENSE text
+CONTRIBUTING.md text
+CODE_OF_CONDUCT.md text
+
+# Configuration files
+.env text
+.env.example text
+.env.local text
+.env.*.local text
+
+# Script files
+*.py text diff=python
+*.sh text eol=lf
+*.js text diff=javascript
+*.ts text diff=typescript
+*.jsx text diff=javascript
+*.tsx text diff=typescript
+*.css text diff=css
+*.html text diff=html
+*.sql text diff=sql
+*.md text diff=markdown
+
+# Chinese language support
+*.md text working-tree-encoding=UTF-8
+*.txt text working-tree-encoding=UTF-8
+*.py text working-tree-encoding=UTF-8
+*.js text working-tree-encoding=UTF-8
+*.ts text working-tree-encoding=UTF-8
+*.json text working-tree-encoding=UTF-8
+*.yml text working-tree-encoding=UTF-8
+*.yaml text working-tree-encoding=UTF-8
+
+# Ensure consistent line endings for cross-platform development
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf

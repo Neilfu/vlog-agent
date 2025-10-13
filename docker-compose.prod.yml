@@ -1,0 +1,261 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:13-alpine
+    container_name: chinese-ai-video-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-chinese_ai_video}
+      POSTGRES_USER: ${POSTGRES_USER:-ai_video_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_password_2024}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ai_video_user} -d ${POSTGRES_DB:-chinese_ai_video}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Redis Cache
+  redis:
+    image: redis:6-alpine
+    container_name: chinese-ai-video-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend
+    container_name: chinese-ai-video-backend
+    restart: unless-stopped
+    environment:
+      # Database Configuration
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ai_video_user}:${POSTGRES_PASSWORD:-secure_password_2024}@postgres:5432/${POSTGRES_DB:-chinese_ai_video}
+
+      # Redis Configuration
+      REDIS_URL: redis://redis:6379/0
+
+      # JWT Configuration
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-super-secure-jwt-secret-key-change-in-production}
+      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-1440}
+
+      # AI Service Configuration
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      VOLC_ACCESS_KEY: ${VOLC_ACCESS_KEY}
+      VOLC_SECRET_KEY: ${VOLC_SECRET_KEY}
+
+      # File Storage Configuration
+      OSS_BUCKET: ${OSS_BUCKET:-chinese-ai-video-assets}
+      OSS_REGION: ${OSS_REGION:-cn-beijing}
+      OSS_ACCESS_KEY: ${OSS_ACCESS_KEY}
+      OSS_SECRET_KEY: ${OSS_SECRET_KEY}
+
+      # Monitoring Configuration
+      PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED:-true}
+      METRICS_PORT: ${METRICS_PORT:-9090}
+
+      # Logging Configuration
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+
+      # Performance Configuration
+      WORKERS: ${WORKERS:-4}
+      WORKER_TIMEOUT: ${WORKER_TIMEOUT:-120}
+
+      # Security Configuration
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://chinese-ai-video.com}
+      API_RATE_LIMIT: ${API_RATE_LIMIT:-100}
+
+    volumes:
+      - ./logs/backend:/app/logs
+      - ./uploads:/app/uploads
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+      - "${METRICS_PORT:-9090}:9090"
+    networks:
+      - app_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/Dockerfile.frontend
+    container_name: chinese-ai-video-frontend
+    restart: unless-stopped
+    environment:
+      # API Configuration
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-https://api.chinese-ai-video.com/api/v1}
+      REACT_APP_WS_URL: ${REACT_APP_WS_URL:-wss://api.chinese-ai-video.com/ws}
+
+      # Application Configuration
+      REACT_APP_NAME: ${REACT_APP_NAME:-中国AI智能短视频创作系统}
+      REACT_APP_VERSION: ${REACT_APP_VERSION:-1.0.0}
+      REACT_APP_ENVIRONMENT: ${REACT_APP_ENVIRONMENT:-production}
+
+      # Feature Flags
+      REACT_APP_ENABLE_ANALYTICS: ${REACT_APP_ENABLE_ANALYTICS:-true}
+      REACT_APP_ENABLE_NOTIFICATIONS: ${REACT_APP_ENABLE_NOTIFICATIONS:-true}
+      REACT_APP_ENABLE_REALTIME: ${REACT_APP_ENABLE_REALTIME:-true}
+
+      # Security Configuration
+      REACT_APP_CSP_ENABLED: ${REACT_APP_CSP_ENABLED:-true}
+      REACT_APP_SENTRY_DSN: ${REACT_APP_SENTRY_DSN}
+
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    networks:
+      - app_network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: chinese-ai-video-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx-site.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    networks:
+      - app_network
+    depends_on:
+      - frontend
+      - backend
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: chinese-ai-video-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - app_network
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: chinese-ai-video-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-secure_grafana_password_2024}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    networks:
+      - app_network
+    depends_on:
+      - prometheus
+
+  # Redis Commander (Optional - for development/debugging)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: chinese-ai-video-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "${REDIS_COMMANDER_PORT:-8081}:8081"
+    networks:
+      - app_network
+    depends_on:
+      - redis
+    profiles:
+      - debug
+
+  # PostgreSQL Adminer (Optional - for development/debugging)
+  adminer:
+    image: adminer:latest
+    container_name: chinese-ai-video-adminer
+    restart: unless-stopped
+    ports:
+      - "${ADMINER_PORT:-8082}:8080"
+    networks:
+      - app_network
+    depends_on:
+      - postgres
+    profiles:
+      - debug
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

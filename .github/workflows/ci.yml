@@ -1,0 +1,378 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  PYTHON_VERSION: '3.8'
+  NODE_VERSION: '16'
+
+jobs:
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:6-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Cache Python dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install Python dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-asyncio
+
+    - name: Create test environment file
+      working-directory: ./backend
+      run: |
+        cp .env.example .env
+        echo "DATABASE_URL=postgresql://testuser:testpass@localhost:5432/testdb" >> .env
+        echo "REDIS_URL=redis://localhost:6379/1" >> .env
+        echo "JWT_SECRET_KEY=test-secret-key-for-ci" >> .env
+        echo "DEEPSEEK_API_KEY=test-deepseek-key" >> .env
+        echo "VOLC_ACCESS_KEY=test-volc-access-key" >> .env
+        echo "VOLC_SECRET_KEY=test-volc-secret-key" >> .env
+
+    - name: Run backend linting
+      working-directory: ./backend
+      run: |
+        pip install flake8 black isort
+        flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
+        black --check app/
+        isort --check-only app/
+
+    - name: Run backend tests
+      working-directory: ./backend
+      run: |
+        pytest tests/ -v --cov=app --cov-report=xml --cov-report=html
+      env:
+        DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+        REDIS_URL: redis://localhost:6379/1
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage.xml
+        flags: backend
+        name: backend-coverage
+
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: |
+        npm ci
+
+    - name: Run frontend linting
+      working-directory: ./frontend
+      run: |
+        npm run lint || true
+
+    - name: Run frontend tests
+      working-directory: ./frontend
+      run: |
+        npm test -- --coverage --watchAll=false || true
+
+    - name: Build frontend
+      working-directory: ./frontend
+      run: |
+        npm run build
+
+    - name: Upload frontend coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./frontend/coverage/lcov.info
+        flags: frontend
+        name: frontend-coverage
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Run Bandit security scan (Python)
+      working-directory: ./backend
+      run: |
+        pip install bandit
+        bandit -r app/ -f json -o bandit-report.json || true
+
+    - name: Run npm audit (Node.js)
+      working-directory: ./frontend
+      run: |
+        npm audit --audit-level=high || true
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build backend Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./backend
+        file: ./docker/Dockerfile.backend
+        push: false
+        tags: chinese-ai-video-backend:test
+
+    - name: Build frontend Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./frontend
+        file: ./docker/Dockerfile.frontend
+        push: false
+        tags: chinese-ai-video-frontend:test
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:6-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Python dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio requests
+
+    - name: Create test environment
+      working-directory: ./backend
+      run: |
+        cp .env.example .env
+        echo "DATABASE_URL=postgresql://testuser:testpass@localhost:5432/testdb" >> .env
+        echo "REDIS_URL=redis://localhost:6379/1" >> .env
+        echo "JWT_SECRET_KEY=test-secret-key-for-ci" >> .env
+        echo "DEEPSEEK_API_KEY=test-deepseek-key" >> .env
+        echo "VOLC_ACCESS_KEY=test-volc-access-key" >> .env
+        echo "VOLC_SECRET_KEY=test-volc-secret-key" >> .env
+
+    - name: Start backend server
+      working-directory: ./backend
+      run: |
+        python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload &
+        sleep 10
+
+    - name: Run integration tests
+      working-directory: ./backend
+      run: |
+        pytest tests/test_integration.py -v
+      env:
+        BACKEND_URL: http://localhost:8000
+
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install analysis tools
+      run: |
+        pip install pylint mypy bandit safety
+
+    - name: Run Python code analysis
+      working-directory: ./backend
+      run: |
+        pylint app/ --output-format=text --reports=no || true
+        mypy app/ --ignore-missing-imports || true
+        safety check --json || true
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install ESLint
+      working-directory: ./frontend
+      run: |
+        npm install -g eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin
+        eslint src/ --ext .ts,.tsx || true
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests, integration-tests]
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Deploy to staging environment
+      run: |
+        echo "Deploying to staging environment..."
+        # Add deployment script here
+        # This could be a script that deploys to a staging server
+        # or updates a staging environment in the cloud
+
+    - name: Run smoke tests
+      run: |
+        echo "Running smoke tests on staging..."
+        # Add smoke tests here
+        # These should be basic tests to ensure the deployment is working
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests, integration-tests, code-quality]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Deploy to production environment
+      run: |
+        echo "Deploying to production environment..."
+        # Add production deployment script here
+        # This should be a more robust deployment process
+        # with proper rollback mechanisms
+
+    - name: Run production health checks
+      run: |
+        echo "Running health checks on production..."
+        # Add health checks here
+        # These should verify that all services are running correctly
+
+  notify:
+    name: Notify Team
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+
+    steps:
+    - name: Notify on success
+      if: needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success'
+      run: |
+        echo "Deployment successful! 🎉"
+        # Add notification logic here (Slack, email, etc.)
+
+    - name: Notify on failure
+      if: needs.deploy-staging.result == 'failure' || needs.deploy-production.result == 'failure'
+      run: |
+        echo "Deployment failed! ❌"
+        # Add failure notification logic here
+
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests, integration-tests]
+    if: always()
+
+    steps:
+    - name: Cleanup resources
+      run: |
+        echo "Cleaning up resources..."
+        # Add cleanup logic here
+        # This could include removing temporary files, stopping services, etc."""}

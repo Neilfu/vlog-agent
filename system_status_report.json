@@ -1,0 +1,65 @@
+{
+  "total_checks": 14,
+  "success_count": 5,
+  "error_count": 1,
+  "warning_count": 4,
+  "success_rate": 35.714285714285715,
+  "details": [
+    {
+      "status": "error",
+      "message": "缺失项目目录: frontend/public, tests"
+    },
+    {
+      "status": "warning",
+      "message": "空值环境变量: VOLC_ACCESS_KEY, VOLC_SECRET_KEY"
+    },
+    {
+      "status": "warning",
+      "message": "缺失Docker文件: docker-compose.prod.yml, backend/Dockerfile, frontend/Dockerfile"
+    },
+    {
+      "status": "info",
+      "message": "Python版本: Python 3.12.7"
+    },
+    {
+      "status": "info",
+      "message": "Pip版本: pip 24.2 from /root/anaconda3/lib/python3.12/site-packages/pip (python 3.12)"
+    },
+    {
+      "status": "success",
+      "message": "后端依赖环境就绪"
+    },
+    {
+      "status": "info",
+      "message": "Node.js版本: v22.14.0"
+    },
+    {
+      "status": "info",
+      "message": "Npm版本: 11.4.2"
+    },
+    {
+      "status": "success",
+      "message": "前端依赖环境就绪"
+    },
+    {
+      "status": "success",
+      "message": "AI服务配置完整"
+    },
+    {
+      "status": "success",
+      "message": "数据库模型完整"
+    },
+    {
+      "status": "success",
+      "message": "API端点配置完整"
+    },
+    {
+      "status": "warning",
+      "message": "测试目录不存在"
+    },
+    {
+      "status": "warning",
+      "message": "缺失文档文件: README.md"
+    }
+  ]
+}

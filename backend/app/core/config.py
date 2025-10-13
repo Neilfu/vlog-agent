@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     # 基础配置
     APP_NAME: str = "中国AI智能短视频创作系统"
     APP_VERSION: str = "1.0.0"
-    DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
+    DEBUG: bool = os.getenv("DEBUG", "false").lower() in ["true", "1", "yes", "on"]
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = int(os.getenv("PORT", "8000"))
 

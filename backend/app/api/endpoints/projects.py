@@ -12,12 +12,35 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 from datetime import datetime
 from uuid import uuid4
+import re
 
 from app.core.database import get_db, Project, ProjectStatus, PlatformTarget
 from app.core.exceptions import NotFoundError, ValidationError
 from loguru import logger
 
 router = APIRouter()
+
+
+def generate_slug(text: str) -> str:
+    """生成URL友好的slug"""
+    # 将中文转换为拼音（简化处理）
+    import unicodedata
+    
+    # 移除特殊字符，保留中文、字母、数字和空格
+    text = re.sub(r'[^\u4e00-\u9fa5a-zA-Z0-9\s-]', '', text)
+    
+    # 将空格替换为连字符
+    text = re.sub(r'\s+', '-', text.strip())
+    
+    # 限制长度
+    if len(text) > 50:
+        text = text[:50]
+    
+    # 确保不为空
+    if not text:
+        text = 'project'
+    
+    return text.lower()
 
 
 # Pydantic模型 - 支持中文输入
@@ -49,17 +72,20 @@ class CreateProjectRequest(BaseModel):
     deadline: Optional[datetime] = Field(None, description="截止日期")
     business_input: BusinessInput = Field(..., description="业务输入 (中文优化)")
     technical_specs: TechnicalSpecs = Field(default_factory=TechnicalSpecs, description="技术规格")
+    creator_id: Optional[str] = Field(None, description="创建者ID (可选，用于关联用户)")
 
 
 class ProjectResponse(BaseModel):
     """项目响应模型"""
     id: str
     title: str
+    slug: str
     description: Optional[str]
     status: ProjectStatus
     project_type: str
     priority: str
     deadline: Optional[datetime]
+    creator_id: Optional[str]
     business_input: BusinessInput
     technical_specs: TechnicalSpecs
     progress: dict
@@ -102,14 +128,25 @@ async def create_project(
 
         # 创建项目
         project_id = str(uuid4())
+        
+        # 生成slug
+        base_slug = generate_slug(project_data.title)
+        slug = base_slug
+        
+        # 确保slug唯一性（简单处理，添加时间戳）
+        import time
+        slug = f"{base_slug}-{int(time.time())}"
+        
         project = Project(
             id=project_id,
             title=project_data.title,
+            slug=slug,
             description=project_data.description,
             status=ProjectStatus.DRAFT,
             project_type=project_data.project_type,
             priority=project_data.priority,
             deadline=project_data.deadline,
+            creator_id=project_data.creator_id,
             business_input=project_data.business_input.dict(),
             technical_specs=project_data.technical_specs.dict(),
             progress={
@@ -142,11 +179,13 @@ async def create_project(
         return ProjectResponse(
             id=project.id,
             title=project.title,
+            slug=project.slug,
             description=project.description,
             status=project.status,
             project_type=project.project_type,
             priority=project.priority,
             deadline=project.deadline,
+            creator_id=project.creator_id,
             business_input=BusinessInput(**project.business_input),
             technical_specs=TechnicalSpecs(**project.technical_specs),
             progress=project.progress,
@@ -236,11 +275,13 @@ async def get_projects(
                 ProjectResponse(
                     id=p.id,
                     title=p.title,
+                    slug=p.slug,
                     description=p.description,
                     status=p.status,
                     project_type=p.project_type,
                     priority=p.priority,
                     deadline=p.deadline,
+                    creator_id=p.creator_id,
                     business_input=BusinessInput(**p.business_input),
                     technical_specs=TechnicalSpecs(**p.technical_specs),
                     progress=p.progress,
@@ -292,6 +333,7 @@ async def get_project(
             project_type=project.project_type,
             priority=project.priority,
             deadline=project.deadline,
+            creator_id=project.creator_id,
             business_input=BusinessInput(**project.business_input),
             technical_specs=TechnicalSpecs(**project.technical_specs),
             progress=project.progress,
@@ -351,6 +393,7 @@ async def update_project(
             project_type=project.project_type,
             priority=project.priority,
             deadline=project.deadline,
+            creator_id=project.creator_id,
             business_input=BusinessInput(**project.business_input),
             technical_specs=TechnicalSpecs(**project.technical_specs),
             progress=project.progress,

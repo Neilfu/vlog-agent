@@ -301,35 +301,35 @@ const Assets: React.FC = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium text-gray-900 truncate">{asset.name}</h3>
-                      <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500"
+                      <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
                         <span>{asset.size}</span>
-                        {asset.dimensions &<span>{asset.dimensions}</span>}
-                        {asset.duration &<span>{asset.duration}</span>}
+                        {asset.dimensions && <span>{asset.dimensions}</span>}
+                        {asset.duration && <span>{asset.duration}</span>}
                         <span>{asset.format.toUpperCase()}</span>
                       </div>
-                      <div className="flex items-center space-x-2 mt-2"
-                        {asset.ai_generated &<span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">AI生成</span>}
+                      <div className="flex items-center space-x-2 mt-2">
+                        {asset.ai_generated && <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">AI生成</span>}
                         <span className="text-xs text-gray-400">{formatDate(asset.created_at)}</span>
                       </div>
-                      {asset.tags.length > 0 &<div className="flex flex-wrap gap-1 mt-2"
+                      {asset.tags.length > 0 && <div className="flex flex-wrap gap-1 mt-2">
                         {asset.tags.slice(0, 3).map((tag, index) => (
-                          <span key={index} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
+                          <span key={index} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
                             {tag}
                           </span>
                         ))}
-                        {asset.tags.length > 3 &<span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
+                        {asset.tags.length > 3 && <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
                           +{asset.tags.length - 3}
                         </span>}
                       </div>}
                     </div>
-                    <div className="flex items-center space-x-2 ml-4"
-                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                    <div className="flex items-center space-x-2 ml-4">
+                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
                         <FiEye className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
                         <FiDownload className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
                         <FiTrash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -343,12 +343,12 @@ const Assets: React.FC = () => {
 
       {filteredAssets.length === 0 && (
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <FiImage className="w-8 h-8 text-gray-400" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">没有找到素材</h3>
           <p className="text-gray-600 mb-4">尝试调整搜索条件或上传新素材</p>
-          <button className="btn btn-primary"
+          <button className="btn btn-primary">
             上传素材
           </button>
         </div>

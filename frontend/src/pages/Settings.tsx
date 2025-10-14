@@ -9,7 +9,8 @@ import {
   FiSave,
   FiRefreshCw,
   FiCheckCircle,
-  FiXCircle
+  FiXCircle,
+  FiTrash2
 } from 'react-icons/fi';
 
 const Settings: React.FC = () => {
@@ -329,23 +330,22 @@ const Settings: React.FC = () => {
           {activeTab === 'notifications' && (
             <div className="card p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-6">通知设置</h2>
-              <div className="space-y-4"
+              <div className="space-y-4">
                 {Object.entries(notifications).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between"
-                  >
-                    <label className="flex items-center space-x-3 cursor-pointer flex-1"
+                  <div key={key} className="flex items-center justify-between">
+                    <label className="flex items-center space-x-3 cursor-pointer flex-1">
                       <input
                         type="checkbox"
                         checked={value}
                         onChange={(e) => setNotifications(prev => ({ ...prev, [key]: e.target.checked }))}
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm font-medium text-gray-700"
-                        {key === 'email' & '邮件通知'}
-                        {key === 'sms' & '短信通知'}
-                        {key === 'push' & '推送通知'}
-                        {key === 'ai_completion' & 'AI任务完成通知'}
-                        {key === 'system_updates' & '系统更新通知'}
+                      <span className="text-sm font-medium text-gray-700">
+                        {key === 'email' && '邮件通知'}
+                        {key === 'sms' && '短信通知'}
+                        {key === 'push' && '推送通知'}
+                        {key === 'ai_completion' && 'AI任务完成通知'}
+                        {key === 'system_updates' && '系统更新通知'}
                       </span>
                     </label>
                   </div>
@@ -358,21 +358,20 @@ const Settings: React.FC = () => {
             <div className="space-y-6">
               <div className="card p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">安全设置</h2>
-                <div className="space-y-4"
+                <div className="space-y-4">
                   {Object.entries(security).map(([key, value]) => (
                     key === 'two_factor_auth' || key === 'login_alerts' ? (
-                      <div key={key} className="flex items-center justify-between"
-                      >
-                        <label className="flex items-center space-x-3 cursor-pointer flex-1"
+                      <div key={key} className="flex items-center justify-between">
+                        <label className="flex items-center space-x-3 cursor-pointer flex-1">
                           <input
                             type="checkbox"
                             checked={value as boolean}
                             onChange={(e) => setSecurity(prev => ({ ...prev, [key]: e.target.checked }))}
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
-                          <span className="text-sm font-medium text-gray-700"
-                            {key === 'two_factor_auth' & '双因素认证'}
-                            {key === 'login_alerts' & '登录提醒'}
+                          <span className="text-sm font-medium text-gray-700">
+                            {key === 'two_factor_auth' && '双因素认证'}
+                            {key === 'login_alerts' && '登录提醒'}
                           </span>
                         </label>
                       </div>
@@ -409,14 +408,14 @@ const Settings: React.FC = () => {
               <div className="card p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">登录历史</h2>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between py-2 border-b border-gray-100"
+                  <div className="flex items-center justify-between py-2 border-b border-gray-100">
                     <div>
                       <p className="text-sm font-medium text-gray-900">当前会话</p>
                       <p className="text-xs text-gray-500">IP: 192.168.1.1 • 浏览器: Chrome</p>
                     </div>
                     <span className="text-xs text-green-600 font-medium">在线</span>
                   </div>
-                  <div className="flex items-center justify-between py-2 border-b border-gray-100"
+                  <div className="flex items-center justify-between py-2 border-b border-gray-100">
                     <div>
                       <p className="text-sm font-medium text-gray-900">2024-01-15 14:30</p>
                       <p className="text-xs text-gray-500">IP: 192.168.1.2 • 浏览器: Safari</p>
@@ -434,29 +433,29 @@ const Settings: React.FC = () => {
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">系统信息</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-3">
-                    <div className="flex justify-between"
+                    <div className="flex justify-between">
                       <span className="text-sm text-gray-600">系统版本</span>
                       <span className="text-sm font-medium">v1.0.0</span>
                     </div>
-                    <div className="flex justify-between"
+                    <div className="flex justify-between">
                       <span className="text-sm text-gray-600">API版本</span>
                       <span className="text-sm font-medium">v1</span>
                     </div>
-                    <div className="flex justify-between"
+                    <div className="flex justify-between">
                       <span className="text-sm text-gray-600">最后更新</span>
                       <span className="text-sm font-medium">2024-01-15</span>
                     </div>
                   </div>
-                  <div className="space-y-3"
-                    <div className="flex justify-between"
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
                       <span className="text-sm text-gray-600">数据库状态</span>
                       <span className="text-sm font-medium text-green-600">正常</span>
                     </div>
-                    <div className="flex justify-between"
+                    <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Redis状态</span>
                       <span className="text-sm font-medium text-green-600">正常</span>
                     </div>
-                    <div className="flex justify-between"
+                    <div className="flex justify-between">
                       <span className="text-sm text-gray-600">AI服务状态</span>
                       <span className="text-sm font-medium text-green-600">正常</span>
                     </div>
@@ -467,15 +466,15 @@ const Settings: React.FC = () => {
               <div className="card p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">性能监控</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="text-center"
+                  <div className="text-center">
                     <div className="text-2xl font-bold text-gray-900">98.5%</div>
                     <div className="text-sm text-gray-600 mt-1">系统可用性</div>
                   </div>
-                  <div className="text-center"
+                  <div className="text-center">
                     <div className="text-2xl font-bold text-gray-900">145ms</div>
                     <div className="text-sm text-gray-600 mt-1">平均响应时间</div>
                   </div>
-                  <div className="text-center"
+                  <div className="text-center">
                     <div className="text-2xl font-bold text-gray-900">1,234</div>
                     <div className="text-sm text-gray-600 mt-1">今日API调用</div>
                   </div>
@@ -485,19 +484,19 @@ const Settings: React.FC = () => {
               <div className="card p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">维护操作</h2>
                 <div className="flex flex-wrap gap-3">
-                  <button className="btn btn-secondary"
+                  <button className="btn btn-secondary">
                     <FiRefreshCw className="w-4 h-4 mr-2" />
                     清除缓存
                   </button>
-                  <button className="btn btn-secondary"
+                  <button className="btn btn-secondary">
                     <FiDatabase className="w-4 h-4 mr-2" />
                     数据库备份
                   </button>
-                  <button className="btn btn-warning"
+                  <button className="btn btn-warning">
                     <FiRefreshCw className="w-4 h-4 mr-2" />
                     重启服务
                   </button>
-                  <button className="btn btn-danger"
+                  <button className="btn btn-danger">
                     <FiTrash2 className="w-4 h-4 mr-2" />
                     清除日志
                   </button>

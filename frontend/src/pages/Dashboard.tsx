@@ -6,7 +6,8 @@ import {
   FiTrendingUp,
   FiClock,
   FiCheckCircle,
-  FiPlayCircle
+  FiPlayCircle,
+  FiImage
 } from 'react-icons/fi';
 
 const Dashboard: React.FC = () => {

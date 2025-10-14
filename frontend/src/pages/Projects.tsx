@@ -11,7 +11,8 @@ import {
   FiPlayCircle,
   FiEdit,
   FiTrash2,
-  FiShare2
+  FiShare2,
+  FiZap
 } from 'react-icons/fi';
 
 const Projects: React.FC = () => {

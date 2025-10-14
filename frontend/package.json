@@ -6,9 +6,11 @@
   "dependencies": {
     "@tanstack/react-query": "^5.17.0",
     "@tanstack/react-query-devtools": "^5.17.0",
+    "@types/axios": "^0.9.36",
     "@types/node": "^20.10.6",
     "@types/react": "^18.2.46",
     "@types/react-dom": "^18.2.18",
+    "axios": "^1.12.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",

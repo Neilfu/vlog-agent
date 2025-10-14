@@ -431,47 +431,5 @@ export interface UserSettings {
   };
 }
 
-// 导出所有类型 / Export all types
-export type {
-  User,
-  UserRole,
-  UserPreferences,
-  AuthTokens,
-  Project,
-  ProjectStatus,
-  BusinessInput,
-  TechnicalSpecs,
-  ProjectProgress,
-  AIConcept,
-  PlatformOptimization,
-  AIScript,
-  ScriptScene,
-  AIStoryboard,
-  StoryboardImage,
-  AIVideo,
-  ContentOptimization,
-  MediaAsset,
-  AssetType,
-  PlatformTarget,
-  AIModel,
-  Workflow,
-  WorkflowStep,
-  Task,
-  TaskType,
-  TaskStatus,
-  FormValidation,
-  FormField,
-  Theme,
-  AppError,
-  LoadingState,
-  PaginationParams,
-  UsageStats,
-  Notification,
-  UserSettings,
-};
-
-export type {
-  ApiResponse,
-  ApiError,
-  PaginationInfo,
-};
+// 所有类型已经通过直接导出声明，无需重复导出
+// All types are already exported through direct export declarations

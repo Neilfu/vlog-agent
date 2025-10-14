@@ -67,7 +67,8 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
     try {
       const response = await projectAPI.getProjects(params);
-      setProjects(response.data);
+      const data = (response as any).data?.data || (response as any).data || [];
+      setProjects(data);
     } catch (error: any) {
       const errorMessage = error.response?.data?.error?.message || '加载项目失败';
       setError(errorMessage);
@@ -84,7 +85,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
     try {
       const response = await projectAPI.createProject(projectData);
-      const newProject = response.data;
+      const newProject = (response as any).data;
 
       setProjects(prev => [newProject, ...prev]);
       setCurrentProject(newProject);
@@ -157,7 +158,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
     try {
       const response = await aiAPI.generateConcept(params);
-      return response.data;
+      return (response as any).data;
     } catch (error: any) {
       const errorMessage = error.response?.data?.error?.message || '生成创意失败';
       setError(errorMessage);
@@ -173,7 +174,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
     try {
       const response = await aiAPI.generateScript(params);
-      const script = response.data;
+      const script = (response as any).data;
       setGeneratedScripts(prev => [script, ...prev]);
       return script;
     } catch (error: any) {
@@ -191,7 +192,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
     try {
       const response = await aiAPI.generateStoryboard(params);
-      const storyboard = response.data;
+      const storyboard = (response as any).data;
       setGeneratedStoryboards(prev => [storyboard, ...prev]);
       return storyboard;
     } catch (error: any) {
@@ -209,7 +210,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
     try {
       const response = await aiAPI.generateVideo(params);
-      const video = response.data;
+      const video = (response as any).data;
       setGeneratedVideos(prev => [video, ...prev]);
       return video;
     } catch (error: any) {
@@ -227,7 +228,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
 
     try {
       const response = await aiAPI.optimizeContent(params);
-      const optimization = response.data;
+      const optimization = (response as any).data;
       setContentOptimizations(prev => [optimization, ...prev]);
       return optimization;
     } catch (error: any) {
@@ -243,7 +244,7 @@ export const ProjectProvider: React.FC<ProjectProviderProps> = ({ children }) =>
   const refreshProject = useCallback(async (projectId: string) => {
     try {
       const response = await projectAPI.getProject(projectId);
-      const updatedProject = response.data;
+      const updatedProject = (response as any).data;
 
       setProjects(prev =>
         prev.map(project =>

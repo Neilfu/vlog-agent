@@ -70,7 +70,7 @@ export const useAuth = (): AuthHook => {
 
     try {
       const response = await authAPI.login({ username, password });
-      const { access_token, user } = response.data;
+      const { access_token, user } = (response as any).data;
 
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('user_data', JSON.stringify(user));
@@ -100,7 +100,7 @@ export const useAuth = (): AuthHook => {
 
     try {
       const response = await authAPI.register(userData);
-      const { access_token, user } = response.data;
+      const { access_token, user } = (response as any).data;
 
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('user_data', JSON.stringify(user));

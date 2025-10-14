@@ -1,13 +1,13 @@
 // API服务 - 处理所有后端API调用
 // API Service - Handles all backend API calls
 
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from 'axios';
 
 // API配置 / API Configuration
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1';
 
 // 创建axios实例 / Create axios instance
-const apiClient: AxiosInstance = axios.create({
+const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000, // 30秒超时 / 30 second timeout
   headers: {
@@ -18,7 +18,7 @@ const apiClient: AxiosInstance = axios.create({
 
 // 请求拦截器 / Request interceptor
 apiClient.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config) => {
     // 添加认证令牌 / Add authentication token
     const token = localStorage.getItem('access_token');
     if (token) {
@@ -29,22 +29,25 @@ apiClient.interceptors.request.use(
     }
 
     // 添加请求ID用于跟踪 / Add request ID for tracking
+    if (!config.headers) {
+      config.headers = {};
+    }
     config.headers['X-Request-ID'] = Math.random().toString(36).substring(7);
 
     return config;
   },
-  (error) => {
+  (error: any) => {
     return Promise.reject(error);
   }
 );
 
 // 响应拦截器 / Response interceptor
 apiClient.interceptors.response.use(
-  (response: AxiosResponse) => {
+  (response) => {
     // 处理成功响应 / Handle successful response
     return response;
   },
-  (error) => {
+  (error: any) => {
     // 处理错误响应 / Handle error response
     if (error.response) {
       const { status, data } = error.response;
@@ -121,7 +124,7 @@ export const authAPI = {
   // 用户登录 / User login
   login: async (credentials: { username: string; password: string }) => {
     const response = await apiClient.post('/auth/login', credentials);
-    return response.data;
+    return (response as any).data;
   },
 
   // 用户注册 / User registration
@@ -133,20 +136,20 @@ export const authAPI = {
     preferences?: Record<string, any>;
   }) => {
     const response = await apiClient.post('/auth/register', userData);
-    return response.data;
+    return (response as any).data;
   },
 
   // 刷新令牌 / Refresh token
   refreshToken: async (refreshToken: string) => {
     const response = await apiClient.post('/auth/refresh', { refresh_token: refreshToken });
-    return response.data;
+    return (response as any).data;
   },
 
   // 登出 / Logout
   logout: async () => {
     const response = await apiClient.post('/auth/logout');
     localStorage.removeItem('access_token');
-    return response.data;
+    return (response as any).data;
   },
 };
 
@@ -155,19 +158,19 @@ export const userAPI = {
   // 获取用户资料 / Get user profile
   getProfile: async () => {
     const response = await apiClient.get('/users/profile');
-    return response.data;
+    return (response as any).data;
   },
 
   // 更新用户资料 / Update user profile
   updateProfile: async (profileData: any) => {
     const response = await apiClient.put('/users/profile', profileData);
-    return response.data;
+    return (response as any).data;
   },
 
   // 获取用户项目 / Get user projects
   getProjects: async (params?: { page?: number; limit?: number; status?: string }) => {
     const response = await apiClient.get('/users/projects', { params });
-    return response.data;
+    return (response as any).data;
   },
 };
 
@@ -181,31 +184,31 @@ export const projectAPI = {
     search?: string;
   }) => {
     const response = await apiClient.get('/projects', { params });
-    return response.data;
+    return (response as any).data;
   },
 
   // 获取项目详情 / Get project details
   getProject: async (projectId: string) => {
     const response = await apiClient.get(`/projects/${projectId}`);
-    return response.data;
+    return (response as any).data;
   },
 
   // 创建项目 / Create project
   createProject: async (projectData: any) => {
     const response = await apiClient.post('/projects', projectData);
-    return response.data;
+    return (response as any).data;
   },
 
   // 更新项目 / Update project
   updateProject: async (projectId: string, projectData: any) => {
     const response = await apiClient.put(`/projects/${projectId}`, projectData);
-    return response.data;
+    return (response as any).data;
   },
 
   // 删除项目 / Delete project
   deleteProject: async (projectId: string) => {
     const response = await apiClient.delete(`/projects/${projectId}`);
-    return response.data;
+    return (response as any).data;
   },
 };
 
@@ -222,7 +225,7 @@ export const aiAPI = {
     temperature?: number;
   }) => {
     const response = await apiClient.post('/ai/generate-concept', params);
-    return response.data;
+    return (response as any).data;
   },
 
   // 生成剧本 / Generate script
@@ -235,7 +238,7 @@ export const aiAPI = {
     target_audience?: string;
   }) => {
     const response = await apiClient.post('/ai/generate-script', params);
-    return response.data;
+    return (response as any).data;
   },
 
   // 生成分镜 / Generate storyboard
@@ -250,7 +253,7 @@ export const aiAPI = {
     color_palette?: string[];
   }) => {
     const response = await apiClient.post('/ai/generate-storyboard', params);
-    return response.data;
+    return (response as any).data;
   },
 
   // 生成视频 / Generate video
@@ -264,7 +267,7 @@ export const aiAPI = {
     voiceover_text?: string;
   }) => {
     const response = await apiClient.post('/ai/generate-video', params);
-    return response.data;
+    return (response as any).data;
   },
 
   // 优化内容 / Optimize content
@@ -275,7 +278,7 @@ export const aiAPI = {
     target_metrics?: string[];
   }) => {
     const response = await apiClient.post('/ai/optimize-content', params);
-    return response.data;
+    return (response as any).data;
   },
 };
 
@@ -288,25 +291,25 @@ export const assetAPI = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data;
+    return (response as any).data;
   },
 
   // 获取资源列表 / Get asset list
   getAssets: async (params?: { type?: string; project_id?: string }) => {
     const response = await apiClient.get('/assets', { params });
-    return response.data;
+    return (response as any).data;
   },
 
   // 获取资源详情 / Get asset details
   getAsset: async (assetId: string) => {
     const response = await apiClient.get(`/assets/${assetId}`);
-    return response.data;
+    return (response as any).data;
   },
 
   // 删除资源 / Delete asset
   deleteAsset: async (assetId: string) => {
     const response = await apiClient.delete(`/assets/${assetId}`);
-    return response.data;
+    return (response as any).data;
   },
 };
 
@@ -315,13 +318,13 @@ export const healthAPI = {
   // 检查系统健康状态 / Check system health
   checkHealth: async () => {
     const response = await apiClient.get('/health');
-    return response.data;
+    return (response as any).data;
   },
 
   // 检查API状态 / Check API status
   checkAPIStatus: async () => {
     const response = await apiClient.get('/health/api');
-    return response.data;
+    return (response as any).data;
   },
 };
 

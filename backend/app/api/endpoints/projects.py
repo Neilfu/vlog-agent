@@ -15,7 +15,21 @@ from uuid import uuid4
 import re
 
 from app.core.database import get_db, Project, ProjectStatus, PlatformTarget
-from app.core.exceptions import NotFoundError, ValidationError
+from app.core.exceptions import NotFoundError, ValidationError, PermissionDeniedError
+from app.core.security import get_current_user
+from app.core.permissions import (
+    require_permission, require_project_create, require_project_read,
+    require_project_write, require_project_delete, require_project_manage,
+    PermissionResource, PermissionAction, get_permission_validator
+)
+from app.models import User
+from app.core.validators import (
+    validate_project_creation_data,
+    BusinessInputValidator,
+    TechnicalSpecsValidator,
+    PlatformTargetValidator,
+    ProjectValidator
+)
 from loguru import logger
 
 router = APIRouter()
@@ -53,6 +67,10 @@ class BusinessInput(BaseModel):
     cultural_context: str = Field(..., description="文化背景 (中文)", example="中国家庭注重宝宝健康和安全")
     platform_target: PlatformTarget = Field(..., description="目标平台")
 
+    class Config:
+        # 允许额外字段，以便验证器可以处理
+        extra = "allow"
+
 
 class TechnicalSpecs(BaseModel):
     """技术规格模型"""
@@ -61,6 +79,10 @@ class TechnicalSpecs(BaseModel):
     aspect_ratio: str = Field(default="16:9", description="宽高比")
     frame_rate: int = Field(default=24, description="帧率")
     file_format: str = Field(default="mp4", description="文件格式")
+
+    class Config:
+        # 允许额外字段，以便验证器可以处理
+        extra = "allow"
 
 
 class CreateProjectRequest(BaseModel):
@@ -73,6 +95,10 @@ class CreateProjectRequest(BaseModel):
     business_input: BusinessInput = Field(..., description="业务输入 (中文优化)")
     technical_specs: TechnicalSpecs = Field(default_factory=TechnicalSpecs, description="技术规格")
     creator_id: Optional[str] = Field(None, description="创建者ID (可选，用于关联用户)")
+
+    class Config:
+        # 允许额外字段，以便验证器可以处理
+        extra = "allow"
 
 
 class ProjectResponse(BaseModel):
@@ -107,48 +133,53 @@ class ProjectListResponse(BaseModel):
 @router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 async def create_project(
     project_data: CreateProjectRequest,
+    current_user: User = Depends(require_project_create),
     db: AsyncSession = Depends(get_db)
 ):
     """
     创建新的视频项目
 
     支持中文业务输入，针对中国短视频平台优化
+    需要项目创建权限
     """
     try:
-        # 验证中文业务输入
-        if len(project_data.business_input.target_audience) < 2:
-            raise ValidationError("目标受众描述太短，请提供更详细的中文描述")
+        # 准备验证数据
+        validation_data = {
+            "title": project_data.title,
+            "description": project_data.description,
+            "project_type": project_data.project_type,
+            "priority": project_data.priority,
+            "deadline": project_data.deadline,
+            "business_input": project_data.business_input.dict(),
+            "technical_specs": project_data.technical_specs.dict()
+        }
 
-        if len(project_data.business_input.key_message) < 5:
-            raise ValidationError("核心信息描述太短，请提供更详细的中文描述")
-
-        # 验证平台选择
-        if project_data.business_input.platform_target not in [p.value for p in PlatformTarget]:
-            raise ValidationError(f"不支持的目标平台: {project_data.business_input.platform_target}")
+        # 使用综合验证器验证所有数据
+        validated_data = validate_project_creation_data(validation_data)
 
         # 创建项目
         project_id = str(uuid4())
-        
+
         # 生成slug
-        base_slug = generate_slug(project_data.title)
+        base_slug = generate_slug(validated_data["title"])
         slug = base_slug
-        
+
         # 确保slug唯一性（简单处理，添加时间戳）
         import time
         slug = f"{base_slug}-{int(time.time())}"
-        
+
         project = Project(
             id=project_id,
-            title=project_data.title,
+            title=validated_data["title"],
             slug=slug,
-            description=project_data.description,
+            description=validated_data.get("description"),
             status=ProjectStatus.DRAFT,
-            project_type=project_data.project_type,
-            priority=project_data.priority,
-            deadline=project_data.deadline,
-            creator_id=project_data.creator_id,
-            business_input=project_data.business_input.dict(),
-            technical_specs=project_data.technical_specs.dict(),
+            project_type=validated_data["project_type"],
+            priority=validated_data["priority"],
+            deadline=validated_data.get("deadline"),
+            creator_id=current_user.id,  # 使用当前用户作为创建者
+            business_input=validated_data["business_input"],
+            technical_specs=validated_data["technical_specs"],
             progress={
                 "current_stage": "draft",
                 "overall_completion": 0.0,
@@ -213,19 +244,34 @@ async def get_projects(
     limit: int = Query(20, ge=1, le=100, description="每页数量"),
     sort_by: str = Query("created_at", description="排序字段"),
     sort_order: str = Query("desc", description="排序方向"),
+    current_user: User = Depends(require_project_read),
     db: AsyncSession = Depends(get_db)
 ):
     """
     获取项目列表
 
     支持中文搜索、多平台过滤、状态过滤
+    需要项目读取权限
     """
     try:
         from sqlalchemy import select, func, or_
         from sqlalchemy.orm import selectinload
 
-        # 基础查询
+        # 基础查询 - 添加用户权限过滤
         query = select(Project).options(selectinload(Project.creator))
+
+        # 如果不是管理员，只显示用户自己的项目或用户有权限访问的项目
+        from app.core.permissions import permission_service
+        is_admin = await permission_service.check_permission(
+            db=db,
+            user_id=current_user.id,
+            resource=PermissionResource.PROJECT,
+            action=PermissionAction.MANAGE
+        )
+
+        if not is_admin:
+            # 只显示用户创建的项目
+            query = query.where(Project.creator_id == current_user.id)
 
         # 状态过滤
         if status:
@@ -307,10 +353,13 @@ async def get_projects(
 @router.get("/{project_id}", response_model=ProjectResponse)
 async def get_project(
     project_id: str,
+    current_user: User = Depends(require_project_read),
     db: AsyncSession = Depends(get_db)
 ):
     """
     获取项目详情
+
+    需要项目读取权限
     """
     try:
         from sqlalchemy import select
@@ -322,6 +371,22 @@ async def get_project(
 
         if not project:
             raise NotFoundError("项目", project_id)
+
+        # 权限检查 - 确保用户有权限访问此项目
+        from app.core.permissions import permission_service
+        has_permission = await permission_service.check_permission(
+            db=db,
+            user_id=current_user.id,
+            resource=PermissionResource.PROJECT,
+            action=PermissionAction.READ,
+            resource_id=project_id
+        )
+
+        if not has_permission:
+            raise PermissionDeniedError(
+                "您没有权限访问此项目",
+                details={"project_id": project_id, "user_id": current_user.id}
+            )
 
         logger.info(f"✅ 项目详情查询成功: {project.title} (ID: {project.id})")
 
@@ -355,10 +420,13 @@ async def get_project(
 async def update_project(
     project_id: str,
     project_data: CreateProjectRequest,
+    current_user: User = Depends(require_project_write),
     db: AsyncSession = Depends(get_db)
 ):
     """
     更新项目信息
+
+    需要项目更新权限
     """
     try:
         from sqlalchemy import select
@@ -370,14 +438,44 @@ async def update_project(
         if not project:
             raise NotFoundError("项目", project_id)
 
+        # 权限检查 - 确保用户有权限更新此项目
+        from app.core.permissions import permission_service
+        has_permission = await permission_service.check_permission(
+            db=db,
+            user_id=current_user.id,
+            resource=PermissionResource.PROJECT,
+            action=PermissionAction.UPDATE,
+            resource_id=project_id
+        )
+
+        if not has_permission:
+            raise PermissionDeniedError(
+                "您没有权限更新此项目",
+                details={"project_id": project_id, "user_id": current_user.id}
+            )
+
+        # 准备验证数据
+        validation_data = {
+            "title": project_data.title,
+            "description": project_data.description,
+            "project_type": project_data.project_type,
+            "priority": project_data.priority,
+            "deadline": project_data.deadline,
+            "business_input": project_data.business_input.dict(),
+            "technical_specs": project_data.technical_specs.dict()
+        }
+
+        # 使用综合验证器验证所有数据
+        validated_data = validate_project_creation_data(validation_data)
+
         # 更新字段
-        project.title = project_data.title
-        project.description = project_data.description
-        project.project_type = project_data.project_type
-        project.priority = project_data.priority
-        project.deadline = project_data.deadline
-        project.business_input = project_data.business_input.dict()
-        project.technical_specs = project_data.technical_specs.dict()
+        project.title = validated_data["title"]
+        project.description = validated_data.get("description")
+        project.project_type = validated_data["project_type"]
+        project.priority = validated_data["priority"]
+        project.deadline = validated_data.get("deadline")
+        project.business_input = validated_data["business_input"]
+        project.technical_specs = validated_data["technical_specs"]
         project.updated_at = datetime.utcnow()
 
         await db.commit()
@@ -388,6 +486,7 @@ async def update_project(
         return ProjectResponse(
             id=project.id,
             title=project.title,
+            slug=project.slug,
             description=project.description,
             status=project.status,
             project_type=project.project_type,
@@ -401,6 +500,9 @@ async def update_project(
             updated_at=project.updated_at
         )
 
+    except ValidationError as e:
+        logger.warning(f"❌ 项目更新验证失败: {e.message}")
+        raise e
     except NotFoundError:
         raise
     except Exception as e:
@@ -414,10 +516,13 @@ async def update_project(
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(
     project_id: str,
+    current_user: User = Depends(require_project_delete),
     db: AsyncSession = Depends(get_db)
 ):
     """
     删除项目（软删除）
+
+    需要项目删除权限
     """
     try:
         from sqlalchemy import select
@@ -428,6 +533,22 @@ async def delete_project(
 
         if not project:
             raise NotFoundError("项目", project_id)
+
+        # 权限检查 - 确保用户有权限删除此项目
+        from app.core.permissions import permission_service
+        has_permission = await permission_service.check_permission(
+            db=db,
+            user_id=current_user.id,
+            resource=PermissionResource.PROJECT,
+            action=PermissionAction.DELETE,
+            resource_id=project_id
+        )
+
+        if not has_permission:
+            raise PermissionDeniedError(
+                "您没有权限删除此项目",
+                details={"project_id": project_id, "user_id": current_user.id}
+            )
 
         # 软删除 - 更新状态而不是真正删除
         project.status = ProjectStatus.ARCHIVED
@@ -448,10 +569,13 @@ async def delete_project(
 @router.get("/{project_id}/status", response_model=dict)
 async def get_project_status(
     project_id: str,
+    current_user: User = Depends(require_project_read),
     db: AsyncSession = Depends(get_db)
 ):
     """
     获取项目状态
+
+    需要项目读取权限
     """
     try:
         from sqlalchemy import select
@@ -464,6 +588,22 @@ async def get_project_status(
             raise NotFoundError("项目", project_id)
 
         status_value, progress = project_data
+
+        # 权限检查 - 确保用户有权限访问此项目
+        from app.core.permissions import permission_service
+        has_permission = await permission_service.check_permission(
+            db=db,
+            user_id=current_user.id,
+            resource=PermissionResource.PROJECT,
+            action=PermissionAction.READ,
+            resource_id=project_id
+        )
+
+        if not has_permission:
+            raise PermissionDeniedError(
+                "您没有权限访问此项目",
+                details={"project_id": project_id, "user_id": current_user.id}
+            )
 
         logger.info(f"✅ 项目状态查询成功: {project_id} - {status_value}")
 

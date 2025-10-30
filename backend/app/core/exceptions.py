@@ -103,6 +103,17 @@ class AuthorizationError(ChineseAIVideoException):
         )
 
 
+class PermissionDeniedError(ChineseAIVideoException):
+    """权限拒绝异常"""
+    def __init__(self, message: str = "权限不足", details: Optional[Dict[str, Any]] = None):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            message=message,
+            error_code="PERMISSION_DENIED",
+            details=details
+        )
+
+
 class NotFoundError(ChineseAIVideoException):
     """资源未找到异常"""
     def __init__(self, resource: str, resource_id: Optional[str] = None):
@@ -166,6 +177,17 @@ class JimengError(AIServiceError):
     """即梦大模型服务异常"""
     def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
         super().__init__("即梦大模型", message, details)
+
+
+class ExternalServiceError(ChineseAIVideoException):
+    """外部服务异常"""
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+        super().__init__(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            message=message,
+            error_code="EXTERNAL_SERVICE_ERROR",
+            details=details
+        )
 
 
 # 异常处理函数

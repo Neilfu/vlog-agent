@@ -1,0 +1,110 @@
+{
+  "kind": "collectionType",
+  "collectionName": "storyboards",
+  "info": {
+    "singularName": "storyboard",
+    "pluralName": "storyboards",
+    "displayName": "Storyboard",
+    "description": "Video storyboards with visual planning"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 200,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "description": {
+      "type": "text",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "frames": {
+      "type": "json",
+      "required": true,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "layout": {
+      "type": "json"
+    },
+    "style": {
+      "type": "json",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "colorPalette": {
+      "type": "json"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "draft",
+        "review",
+        "approved",
+        "rejected"
+      ],
+      "default": "draft"
+    },
+    "version": {
+      "type": "integer",
+      "default": 1,
+      "min": 1
+    },
+    "project": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::project.project",
+      "inversedBy": "storyboards"
+    },
+    "visualStyle": {
+      "type": "enumeration",
+      "enum": [
+        "minimalist",
+        "colorful",
+        "professional",
+        "casual",
+        "elegant",
+        "modern",
+        "traditional"
+      ]
+    },
+    "targetPlatform": {
+      "type": "enumeration",
+      "enum": [
+        "douyin",
+        "wechat",
+        "weibo",
+        "xiaohongshu",
+        "bilibili",
+        "youtube"
+      ]
+    },
+    "estimatedDuration": {
+      "type": "integer",
+      "min": 5,
+      "max": 300
+    }
+  }
+}

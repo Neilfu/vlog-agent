@@ -1,0 +1,147 @@
+{
+  "kind": "collectionType",
+  "collectionName": "projects",
+  "info": {
+    "singularName": "project",
+    "pluralName": "projects",
+    "displayName": "Project",
+    "description": "Video projects for Chinese AI video creation system"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 200,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "title"
+    },
+    "description": {
+      "type": "text",
+      "maxLength": 2000,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "draft",
+        "concept",
+        "scripting",
+        "storyboard",
+        "production",
+        "post_production",
+        "review",
+        "published",
+        "archived"
+      ],
+      "default": "draft",
+      "required": true
+    },
+    "projectType": {
+      "type": "enumeration",
+      "enum": [
+        "promotional",
+        "educational",
+        "entertainment",
+        "corporate",
+        "social_media",
+        "advertisement"
+      ],
+      "default": "promotional"
+    },
+    "priority": {
+      "type": "enumeration",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "urgent"
+      ],
+      "default": "medium"
+    },
+    "deadline": {
+      "type": "datetime"
+    },
+    "businessInput": {
+      "type": "json",
+      "required": true,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "technicalSpecs": {
+      "type": "json",
+      "required": true
+    },
+    "progress": {
+      "type": "json"
+    },
+    "projectMetadata": {
+      "type": "json"
+    },
+    "creatorId": {
+      "type": "string"
+    },
+    "organizationId": {
+      "type": "string"
+    },
+    "workflowId": {
+      "type": "string"
+    },
+    "parentProject": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::project.project"
+    },
+    "creativeIdeas": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::creative-idea.creative-idea",
+      "mappedBy": "project"
+    },
+    "scripts": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::script.script",
+      "mappedBy": "project"
+    },
+    "storyboards": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::storyboard.storyboard",
+      "mappedBy": "project"
+    },
+    "mediaAssets": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::media-asset.media-asset",
+      "mappedBy": "project"
+    },
+    "finalVideos": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::final-video.final-video",
+      "mappedBy": "project"
+    }
+  }
+}

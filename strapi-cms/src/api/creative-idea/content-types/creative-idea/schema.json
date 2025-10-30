@@ -1,0 +1,107 @@
+{
+  "kind": "collectionType",
+  "collectionName": "creative_ideas",
+  "info": {
+    "singularName": "creative-idea",
+    "pluralName": "creative-ideas",
+    "displayName": "Creative Idea",
+    "description": "AI-generated creative ideas for video projects"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 200,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "description": {
+      "type": "text",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "content": {
+      "type": "json",
+      "required": true,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "prompt": {
+      "type": "text",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "aiModel": {
+      "type": "string",
+      "required": true
+    },
+    "parameters": {
+      "type": "json"
+    },
+    "rating": {
+      "type": "integer",
+      "min": 1,
+      "max": 5
+    },
+    "feedback": {
+      "type": "text",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "active",
+        "inactive",
+        "selected"
+      ],
+      "default": "active"
+    },
+    "isSelected": {
+      "type": "boolean",
+      "default": false
+    },
+    "project": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::project.project",
+      "inversedBy": "creativeIdeas"
+    },
+    "tags": {
+      "type": "json"
+    },
+    "category": {
+      "type": "enumeration",
+      "enum": [
+        "concept",
+        "storyline",
+        "creative_angle",
+        "marketing_approach",
+        "cultural_element"
+      ]
+    }
+  }
+}

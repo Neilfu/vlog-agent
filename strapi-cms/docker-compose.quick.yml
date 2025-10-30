@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  strapi:
+    image: strapi/strapi:latest
+    container_name: chinese-ai-video-strapi-quick
+    restart: unless-stopped
+    ports:
+      - "1337:1337"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_CLIENT=sqlite
+      - DATABASE_FILENAME=.tmp/data.db
+    volumes:
+      - strapi_data:/srv/app
+    networks:
+      - strapi-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1337/admin"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  strapi_data:
+
+networks:
+  strapi-network:
+    driver: bridge

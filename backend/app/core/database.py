@@ -87,6 +87,41 @@ class VideoStatus(str, enum.Enum):
     FAILED = "failed"
 
 
+class PermissionResource(str, enum.Enum):
+    """权限资源类型枚举"""
+    USER = "user"
+    PROJECT = "project"
+    ASSET = "asset"
+    SCRIPT = "script"
+    STORYBOARD = "storyboard"
+    VIDEO = "video"
+    AI_MODEL = "ai_model"
+    ORGANIZATION = "organization"
+    SYSTEM = "system"
+
+
+class PermissionAction(str, enum.Enum):
+    """权限操作类型枚举"""
+    CREATE = "create"
+    READ = "read"
+    UPDATE = "update"
+    DELETE = "delete"
+    EXECUTE = "execute"
+    MANAGE = "manage"
+    APPROVE = "approve"
+    REVIEW = "review"
+    PUBLISH = "publish"
+    EXPORT = "export"
+    SHARE = "share"
+
+
+class RoleType(str, enum.Enum):
+    """角色类型枚举"""
+    SYSTEM = "system"      # 系统预定义角色
+    CUSTOM = "custom"      # 自定义角色
+    ORGANIZATION = "organization"  # 组织级别角色
+
+
 # 用户模型
 class User(Base):
     """用户模型 - 支持中国用户"""
@@ -356,6 +391,184 @@ class FinalVideo(Base):
     project: Mapped["Project"] = relationship("Project", back_populates="final_videos")
 
 
+# 权限系统模型
+class Permission(Base):
+    """权限模型 - 细粒度权限定义"""
+    __tablename__ = "permissions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True, index=True)
+    description: Mapped[str] = mapped_column(String(500))
+    resource: Mapped[PermissionResource] = mapped_column(SQLEnum(PermissionResource), index=True)
+    action: Mapped[PermissionAction] = mapped_column(SQLEnum(PermissionAction), index=True)
+
+    # 权限元数据
+    category: Mapped[str] = mapped_column(String(50), index=True)  # 权限分类
+    is_system: Mapped[bool] = mapped_column(Boolean, default=False)  # 是否为系统权限
+
+    # 中文本地化
+    name_zh: Mapped[str] = mapped_column(String(100))  # 中文名称
+    description_zh: Mapped[str] = mapped_column(String(500))  # 中文描述
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # 关系
+    role_permissions: Mapped[List["RolePermission"]] = relationship("RolePermission", back_populates="permission")
+
+
+class Role(Base):
+    """角色模型 - 支持角色继承和层级结构"""
+    __tablename__ = "roles"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True, index=True)
+    description: Mapped[str] = mapped_column(String(500))
+    role_type: Mapped[RoleType] = mapped_column(SQLEnum(RoleType), default=RoleType.CUSTOM)
+
+    # 角色层级结构
+    parent_role_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("roles.id"), nullable=True)
+    level: Mapped[int] = mapped_column(Integer, default=0)  # 角色级别
+
+    # 组织支持
+    organization_id: Mapped[Optional[str]] = mapped_column(String(36), index=True, nullable=True)
+
+    # 角色状态
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_system: Mapped[bool] = mapped_column(Boolean, default=False)  # 是否为系统角色
+
+    # 中文本地化
+    name_zh: Mapped[str] = mapped_column(String(100))  # 中文名称
+    description_zh: Mapped[str] = mapped_column(String(500))  # 中文描述
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # 关系
+    parent_role: Mapped[Optional["Role"]] = relationship("Role", remote_side=[id])
+    role_permissions: Mapped[List["RolePermission"]] = relationship("RolePermission", back_populates="role")
+    user_roles: Mapped[List["UserRole"]] = relationship("UserRole", back_populates="role")
+
+
+class RolePermission(Base):
+    """角色权限关联模型 - 多对多关系"""
+    __tablename__ = "role_permissions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    role_id: Mapped[str] = mapped_column(String(36), ForeignKey("roles.id"), index=True)
+    permission_id: Mapped[str] = mapped_column(String(36), ForeignKey("permissions.id"), index=True)
+
+    # 权限范围（用于细粒度控制）
+    scope: Mapped[Optional[str]] = mapped_column(String(100))  # 例如：own, organization, all
+    conditions: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)  # 额外条件
+
+    # 权限状态
+    is_granted: Mapped[bool] = mapped_column(Boolean, default=True)  # 是否授予（支持拒绝权限）
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)  # 过期时间
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # 关系
+    role: Mapped["Role"] = relationship("Role", back_populates="role_permissions")
+    permission: Mapped["Permission"] = relationship("Permission", back_populates="role_permissions")
+
+
+class UserRole(Base):
+    """用户角色关联模型 - 支持多角色"""
+    __tablename__ = "user_roles"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
+    role_id: Mapped[str] = mapped_column(String(36), ForeignKey("roles.id"), index=True)
+
+    # 角色分配信息
+    assigned_by: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    assignment_reason: Mapped[Optional[str]] = mapped_column(String(500))
+
+    # 角色有效期
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    # 状态
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # 关系
+    user: Mapped["User"] = relationship("User", foreign_keys=[user_id])
+    role: Mapped["Role"] = relationship("Role", back_populates="user_roles")
+    assigned_by_user: Mapped[Optional["User"]] = relationship("User", foreign_keys=[assigned_by])
+
+
+class ResourcePermission(Base):
+    """资源权限模型 - 针对特定资源的权限控制"""
+    __tablename__ = "resource_permissions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+
+    # 资源信息
+    resource_type: Mapped[PermissionResource] = mapped_column(SQLEnum(PermissionResource), index=True)
+    resource_id: Mapped[str] = mapped_column(String(36), index=True)
+
+    # 权限信息
+    permission_id: Mapped[str] = mapped_column(String(36), ForeignKey("permissions.id"), index=True)
+
+    # 主体信息（用户或角色）
+    subject_type: Mapped[str] = mapped_column(String(20))  # user 或 role
+    subject_id: Mapped[str] = mapped_column(String(36), index=True)
+
+    # 权限设置
+    is_granted: Mapped[bool] = mapped_column(Boolean, default=True)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    conditions: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+
+    created_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # 关系
+    permission: Mapped["Permission"] = relationship("Permission")
+    creator: Mapped["User"] = relationship("User")
+
+
+class PermissionAuditLog(Base):
+    """权限审计日志模型 - 记录权限相关操作"""
+    __tablename__ = "permission_audit_logs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+
+    # 操作信息
+    action: Mapped[str] = mapped_column(String(50), index=True)  # grant, revoke, update, check
+    resource_type: Mapped[PermissionResource] = mapped_column(SQLEnum(PermissionResource), index=True)
+    resource_id: Mapped[Optional[str]] = mapped_column(String(36), index=True)
+
+    # 主体信息
+    subject_type: Mapped[str] = mapped_column(String(20))  # user 或 role
+    subject_id: Mapped[str] = mapped_column(String(36), index=True)
+
+    # 权限信息
+    permission_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("permissions.id"))
+    role_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("roles.id"))
+
+    # 执行者信息
+    performed_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
+    ip_address: Mapped[Optional[str]] = mapped_column(String(45))
+    user_agent: Mapped[Optional[str]] = mapped_column(String(500))
+
+    # 结果和详情
+    success: Mapped[bool] = mapped_column(Boolean, default=True)
+    details: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    error_message: Mapped[Optional[str]] = mapped_column(Text)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    # 关系
+    permission: Mapped[Optional["Permission"]] = relationship("Permission")
+    role: Mapped[Optional["Role"]] = relationship("Role")
+    performer: Mapped["User"] = relationship("User")
+
+
 # 数据库引擎和会话
 engine = None
 async_session_maker = None
@@ -526,9 +739,10 @@ async def check_redis_health():
 async def check_db_health():
     """检查数据库健康状态"""
     try:
+        from sqlalchemy import text
         async with async_session_maker() as session:
-            result = await session.execute("SELECT 1")
-            return True
+            result = await session.execute(text("SELECT 1"))
+            return result.scalar() == 1
     except Exception as e:
         logger.error(f"数据库健康检查失败: {e}")
         return False

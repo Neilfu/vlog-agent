@@ -1,0 +1,28 @@
+{
+  "name": "chinese-ai-video-strapi",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A Strapi application for Chinese AI Video Creation System",
+  "scripts": {
+    "develop": "strapi develop",
+    "start": "strapi start",
+    "build": "strapi build",
+    "strapi": "strapi"
+  },
+  "dependencies": {
+    "@strapi/strapi": "4.15.4",
+    "@strapi/plugin-users-permissions": "4.15.4",
+    "@strapi/plugin-i18n": "4.15.4",
+    "better-sqlite3": "9.2.2"
+  },
+  "author": {
+    "name": "Chinese AI Video System"
+  },
+  "strapi": {
+    "uuid": "chinese-ai-video-strapi-001"
+  },
+  "engines": {
+    "node": ">=14.0.0 <=20.x.x",
+    "npm": ">=6.0.0"
+  }
+}

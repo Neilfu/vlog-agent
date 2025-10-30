@@ -30,8 +30,8 @@ const Assets: React.FC = () => {
       format: 'jpg',
       dimensions: '1920x1080',
       created_at: '2024-01-15T10:30:00Z',
-      thumbnail_url: 'https://via.placeholder.com/300x200/4F46E5/ffffff?text=花朵背景',
-      url: 'https://via.placeholder.com/1920x1080/4F46E5/ffffff?text=春季花朵背景',
+      thumbnail_url: 'https://picsum.photos/300/200?random=1',
+      url: 'https://picsum.photos/1920/1080?random=1',
       tags: ['春季', '花朵', '背景', '自然'],
       ai_generated: false
     },
@@ -43,8 +43,8 @@ const Assets: React.FC = () => {
       format: 'jpg',
       dimensions: '1024x1024',
       created_at: '2024-01-15T11:30:00Z',
-      thumbnail_url: 'https://via.placeholder.com/300x200/10B981/ffffff?text=宝宝护肤',
-      url: 'https://via.placeholder.com/1024x1024/10B981/ffffff?text=宝宝护肤场景',
+      thumbnail_url: 'https://picsum.photos/300/200?random=2',
+      url: 'https://picsum.photos/1024/1024?random=2',
       tags: ['宝宝', '护肤', '温馨', '生活'],
       ai_generated: true,
       ai_model: 'jimeng-4.0'
@@ -58,8 +58,8 @@ const Assets: React.FC = () => {
       duration: '0:30',
       dimensions: '1080x1920',
       created_at: '2024-01-14T14:20:00Z',
-      thumbnail_url: 'https://via.placeholder.com/300x200/F59E0B/ffffff?text=产品视频',
-      url: 'https://via.placeholder.com/1080x1920/F59E0B/ffffff?text=产品展示视频',
+      thumbnail_url: 'https://picsum.photos/300/200?random=3',
+      url: 'https://picsum.photos/1080/1920?random=3',
       tags: ['产品', '展示', '竖屏', '商业'],
       ai_generated: true,
       ai_model: 'jimeng-video-3.0'
@@ -71,7 +71,7 @@ const Assets: React.FC = () => {
       size: '12.3 KB',
       format: 'txt',
       created_at: '2024-01-13T09:15:00Z',
-      thumbnail_url: 'https://via.placeholder.com/300x200/6B7280/ffffff?text=文本文档',
+      thumbnail_url: 'https://picsum.photos/300/200?random=4',
       url: '#',
       tags: ['文案', '品牌', '文字'],
       ai_generated: true,
@@ -85,8 +85,8 @@ const Assets: React.FC = () => {
       format: 'jpg',
       dimensions: '1536x1024',
       created_at: '2024-01-12T16:45:00Z',
-      thumbnail_url: 'https://via.placeholder.com/300x200/EC4899/ffffff?text=家庭场景',
-      url: 'https://via.placeholder.com/1536x1024/EC4899/ffffff?text=温馨家庭场景',
+      thumbnail_url: 'https://picsum.photos/300/200?random=5',
+      url: 'https://picsum.photos/1536/1024?random=5',
       tags: ['家庭', '温馨', '生活', '情感'],
       ai_generated: true,
       ai_model: 'jimeng-4.0'
@@ -100,8 +100,8 @@ const Assets: React.FC = () => {
       duration: '1:15',
       dimensions: '1920x1080',
       created_at: '2024-01-11T11:20:00Z',
-      thumbnail_url: 'https://via.placeholder.com/300x200/8B5CF6/ffffff?text=教程视频',
-      url: 'https://via.placeholder.com/1920x1080/8B5CF6/ffffff?text=教程演示视频',
+      thumbnail_url: 'https://picsum.photos/300/200?random=6',
+      url: 'https://picsum.photos/1920/1080?random=6',
       tags: ['教程', '演示', '教育', '横屏'],
       ai_generated: false
     }

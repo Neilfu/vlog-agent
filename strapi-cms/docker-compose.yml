@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  strapi:
+    build: .
+    container_name: chinese-ai-video-strapi
+    restart: unless-stopped
+    ports:
+      - "1337:1337"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_CLIENT=postgres
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=strapi_cms
+      - DATABASE_USERNAME=strapi
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-strapi_password}
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret}
+      - ADMIN_JWT_SECRET=${ADMIN_JWT_SECRET:-your-admin-jwt-secret}
+      - APP_KEYS=${APP_KEYS:-app-key-1,app-key-2,app-key-3,app-key-4}
+      - API_TOKEN_SALT=${API_TOKEN_SALT:-your-api-token-salt}
+      - TRANSFER_TOKEN_SALT=${TRANSFER_TOKEN_SALT:-your-transfer-token-salt}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-your-webhook-secret}
+      - STRAPI_BACKEND_URL=${STRAPI_BACKEND_URL:-http://backend:8000}
+    volumes:
+      - strapi_uploads:/app/public/uploads
+      - ./config:/app/config
+      - ./src:/app/src
+      - ./package.json:/app/package.json
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - strapi-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1337/_health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: strapi-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=strapi_cms
+      - POSTGRES_USER=strapi
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD:-strapi_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - strapi-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U strapi -d strapi_cms"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: strapi-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - strapi-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    container_name: strapi-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - strapi
+    networks:
+      - strapi-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  strapi_uploads:
+
+networks:
+  strapi-network:
+    driver: bridge

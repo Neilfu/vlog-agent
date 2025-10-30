@@ -1,0 +1,849 @@
+openapi: 3.0.3
+info:
+  title: Strapi Content Management API
+  description: API contracts for Strapi integration with Chinese AI Video Creation System
+  version: 1.0.0
+  contact:
+    name: Chinese AI Video Team
+    email: support@chinese-ai-video.com
+servers:
+  - url: http://localhost:1337/api
+    description: Development server
+  - url: https://cms.chinese-ai-video.com/api
+    description: Production server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /video-contents:
+    get:
+      summary: Get video contents with filtering
+      description: Retrieve video contents with optional filtering by locale, platform, and status
+      parameters:
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: zh-CN
+            enum: [zh-CN, zh-TW, en-US]
+          description: Content locale
+        - name: platforms
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [douyin, wechat, xiaohongshu, weibo, bilibili, youtube]
+          description: Filter by platforms
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, review, scheduled, published, archived]
+          description: Filter by publish status
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 25
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Successfully retrieved video contents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoContentList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create new video content
+      description: Create a new video content entry with AI-generated metadata
+      requestBody:
+        required: true
+        content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoContentCreate'
+      responses:
+        '201':
+          description: Video content created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoContentDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /video-contents/{id}:
+    get:
+      summary: Get video content by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: zh-CN
+      responses:
+        '200':
+          description: Video content retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoContentDetail'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      summary: Update video content
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VideoContentUpdate'
+      responses:
+        '200':
+          description: Video content updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoContentDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      summary: Delete video content
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Video content deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /ai-generated-contents:
+    get:
+      summary: Get AI generated content
+      parameters:
+        - name: contentType
+          in: query
+          schema:
+            type: string
+            enum: [concept, script, storyboard, video, optimization]
+        - name: aiModel
+          in: query
+          schema:
+            type: string
+        - name: videoContentId
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: AI generated content retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIGeneratedContentList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      summary: Create AI generated content
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIGeneratedContentCreate'
+      responses:
+        '201':
+          description: AI content created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIGeneratedContentDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /content-templates:
+    get:
+      summary: Get content templates
+      parameters:
+        - name: templateType
+          in: query
+          schema:
+            type: string
+            enum: [video, script, storyboard, thumbnail]
+        - name: platforms
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [douyin, wechat, xiaohongshu, weibo, bilibili, universal]
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Content templates retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentTemplateList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      summary: Create content template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentTemplateCreate'
+      responses:
+        '201':
+          description: Content template created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentTemplateDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /content-templates/{id}:
+    get:
+      summary: Get content template by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Content template retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentTemplateDetail'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /content/sync:
+    post:
+      summary: Sync content from Strapi to AI system
+      description: Trigger synchronization of content data from Strapi to the main AI video creation system
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                locale:
+                  type: string
+                  default: zh-CN
+                  enum: [zh-CN, zh-TW, en-US]
+                contentTypes:
+                  type: array
+                  items:
+                    type: string
+                    enum: [video-content, content-template]
+                updatedAfter:
+                  type: string
+                  format: date-time
+                fullSync:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Content synchronization triggered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  syncId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [started, in_progress, completed, failed]
+                  itemsProcessed:
+                    type: integer
+                  errors:
+                    type: array
+                    items:
+                      type: object
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /webhooks/content-change:
+    post:
+      summary: Content change webhook
+      description: Webhook endpoint for Strapi to notify about content changes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookPayload'
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  processed:
+                    type: boolean
+                  cacheInvalidated:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    VideoContentBase:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 100
+          description: Video title in specified locale
+        description:
+          type: string
+          maxLength: 500
+          description: Video description in specified locale
+        duration:
+          type: integer
+          minimum: 1
+          maximum: 300
+          description: Video duration in seconds
+        resolution:
+          type: string
+          enum: [720p, 1080p, 1440p, 4K]
+        aspectRatio:
+          type: string
+          enum: ["16:9", "9:16", "1:1", "4:3"]
+        platforms:
+          type: array
+          items:
+            type: string
+            enum: [douyin, wechat, xiaohongshu, weibo, bilibili, youtube]
+          description: Target social media platforms
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentTag'
+        aiMetadata:
+          $ref: '#/components/schemas/AIMetadata'
+        platformOptimizations:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlatformOptimization'
+        publishStatus:
+          type: string
+          enum: [draft, review, scheduled, published, archived]
+        scheduledPublishAt:
+          type: string
+          format: date-time
+
+    VideoContentCreate:
+      allOf:
+        - $ref: '#/components/schemas/VideoContentBase'
+        - type: object
+          required: [title, description, duration, platforms]
+          properties:
+            videoFile:
+              type: string
+              format: binary
+              description: Video file upload
+            thumbnail:
+              type: string
+              format: binary
+              description: Thumbnail image upload
+
+    VideoContentUpdate:
+      $ref: '#/components/schemas/VideoContentBase'
+
+    VideoContentDetail:
+      allOf:
+        - $ref: '#/components/schemas/VideoContentBase'
+        - type: object
+          properties:
+            id:
+              type: integer
+            slug:
+              type: string
+            videoFile:
+              $ref: '#/components/schemas/MediaAsset'
+            thumbnail:
+              $ref: '#/components/schemas/MediaAsset'
+            engagementMetrics:
+              $ref: '#/components/schemas/EngagementMetrics'
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+            publishedAt:
+              type: string
+              format: date-time
+            locale:
+              type: string
+            localizations:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  locale:
+                    type: string
+
+    VideoContentList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideoContentDetail'
+        meta:
+          type: object
+          properties:
+            pagination:
+              type: object
+              properties:
+                page:
+                  type: integer
+                pageSize:
+                  type: integer
+                pageCount:
+                  type: integer
+                total:
+                  type: integer
+
+    ContentTag:
+      type: object
+      properties:
+        tag:
+          type: string
+          maxLength: 50
+        category:
+          type: string
+          enum: [topic, style, emotion, industry, trend]
+        weight:
+          type: integer
+          minimum: 1
+          maximum: 10
+
+    AIMetadata:
+      type: object
+      properties:
+        modelUsed:
+          type: string
+        promptVersion:
+          type: string
+        processingParams:
+          type: object
+        confidenceScore:
+          type: number
+          minimum: 0
+          maximum: 1
+        culturalRelevance:
+          type: number
+          minimum: 0
+          maximum: 1
+        languageQuality:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    PlatformOptimization:
+      type: object
+      properties:
+        platform:
+          type: string
+          enum: [douyin, wechat, xiaohongshu, weibo, bilibili, youtube]
+        hashtags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Hashtag'
+        optimalPostingTime:
+          type: string
+          format: time
+        contentFormat:
+          type: string
+          enum: [video, image, carousel, story, live]
+        recommendedLength:
+          type: integer
+        engagementTips:
+          type: string
+        algorithmScore:
+          type: number
+          minimum: 0
+          maximum: 100
+
+    Hashtag:
+      type: object
+      properties:
+        tag:
+          type: string
+          pattern: "^#[\\w\\u4e00-\\u9fff]+$"
+        popularity:
+          type: integer
+          minimum: 1
+          maximum: 100
+        relevance:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    EngagementMetrics:
+      type: object
+      properties:
+        predictedViews:
+          type: integer
+        predictedLikes:
+          type: integer
+        predictedShares:
+          type: integer
+        predictedComments:
+          type: integer
+        engagementRate:
+          type: number
+          minimum: 0
+          maximum: 100
+        viralityScore:
+          type: number
+          minimum: 0
+          maximum: 100
+
+    MediaAsset:
+      type: object
+      properties:
+        id:
+          type: integer
+        url:
+          type: string
+          format: uri
+        alternativeText:
+          type: string
+        caption:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+        formats:
+          type: object
+        hash:
+          type: string
+        ext:
+          type: string
+        mime:
+          type: string
+        size:
+          type: number
+        previewUrl:
+          type: string
+          format: uri
+        provider:
+          type: string
+        provider_metadata:
+          type: object
+
+    AIGeneratedContentCreate:
+      type: object
+      required: [contentType, aiModel, prompt, generatedContent]
+      properties:
+        contentType:
+          type: string
+          enum: [concept, script, storyboard, video, optimization]
+        aiModel:
+          type: string
+        prompt:
+          type: string
+        generatedContent:
+          type: object
+        qualityScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        processingTime:
+          type: integer
+        cost:
+          type: number
+          minimum: 0
+        videoContent:
+          type: integer
+          description: ID of related video content
+
+    AIGeneratedContentDetail:
+      allOf:
+        - $ref: '#/components/schemas/AIGeneratedContentCreate'
+        - type: object
+          properties:
+            id:
+              type: integer
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    AIGeneratedContentList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIGeneratedContentDetail'
+        meta:
+          type: object
+          properties:
+            pagination:
+              type: object
+
+    ContentTemplateCreate:
+      type: object
+      required: [name, templateType, templateData]
+      properties:
+        name:
+          type: string
+          unique: true
+        description:
+          type: string
+        templateType:
+          type: string
+          enum: [video, script, storyboard, thumbnail]
+        platforms:
+          type: array
+          items:
+            type: string
+            enum: [douyin, wechat, xiaohongshu, weibo, bilibili, universal]
+        templateData:
+          type: object
+        variables:
+          type: array
+          items:
+            type: object
+        isActive:
+          type: boolean
+
+    ContentTemplateDetail:
+      allOf:
+        - $ref: '#/components/schemas/ContentTemplateCreate'
+        - type: object
+          properties:
+            id:
+              type: integer
+            usageCount:
+              type: integer
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    ContentTemplateList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentTemplateDetail'
+        meta:
+          type: object
+          properties:
+            pagination:
+              type: object
+
+    WebhookPayload:
+      type: object
+      required: [event, model, entry]
+      properties:
+        event:
+          type: string
+          enum: [entry.create, entry.update, entry.delete, entry.publish, entry.unpublish]
+        model:
+          type: string
+        entry:
+          type: object
+          properties:
+            id:
+              type: integer
+            title:
+              type: string
+            locale:
+              type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        statusCode:
+          type: integer
+        details:
+          type: object
+
+  responses:
+    UnauthorizedError:
+      description: Authentication token is missing or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+tags:
+  - name: Video Content
+    description: Video content management endpoints
+  - name: AI Generated Content
+    description: AI generated content management
+  - name: Content Templates
+    description: Content template management
+  - name: Content Sync
+    description: Content synchronization between systems
+  - name: Webhooks
+    description: Webhook endpoints for content change notifications
+
+x-tagGroups:
+  - name: Content Management
+    tags:
+      - Video Content
+      - AI Generated Content
+      - Content Templates
+  - name: Integration
+    tags:
+      - Content Sync
+      - Webhooks
+
+x-strapi-config:
+  content-types:
+    - video-content
+    - ai-generated-content
+    - content-template
+  components:
+    - content.tags
+    - content.ai-metadata
+    - content.platform-optimization
+    - content.engagement-metrics
+    - content.template-variable
+    - content.hashtag
+  localization:
+    enabled: true
+    defaultLocale: zh-CN
+    locales:
+      - zh-CN
+      - zh-TW
+      - en-US
+  webhooks:
+    enabled: true
+    events:
+      - entry.create
+      - entry.update
+      - entry.delete
+      - entry.publish
+      - entry.unpublish
+  security:
+    rateLimiting:
+      windowMs: 60000
+      max: 100
+    cors:
+      enabled: true
+      origins:
+        - http://localhost:3000
+        - https://chinese-ai-video.com
+    authentication:
+      jwt:
+        expiresIn: "1h"
+        refreshExpiresIn: "7d"`

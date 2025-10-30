@@ -1,0 +1,133 @@
+{
+  "kind": "collectionType",
+  "collectionName": "final_videos",
+  "info": {
+    "singularName": "final-video",
+    "pluralName": "final-videos",
+    "displayName": "Final Video",
+    "description": "Completed videos ready for publishing"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 200,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "description": {
+      "type": "text",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "video": {
+      "type": "media",
+      "multiple": false,
+      "required": true,
+      "allowedTypes": [
+        "videos"
+      ]
+    },
+    "thumbnail": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "duration": {
+      "type": "integer",
+      "required": true,
+      "min": 5,
+      "max": 300
+    },
+    "resolution": {
+      "type": "enumeration",
+      "enum": [
+        "720p",
+        "1080p",
+        "1440p",
+        "4K"
+      ],
+      "default": "1080p"
+    },
+    "fileSize": {
+      "type": "integer"
+    },
+    "platformOptimizations": {
+      "type": "json"
+    },
+    "videoMetadata": {
+      "type": "json"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "draft",
+        "rendering",
+        "completed",
+        "failed"
+      ],
+      "default": "draft"
+    },
+    "renderJobId": {
+      "type": "string"
+    },
+    "aiModel": {
+      "type": "string"
+    },
+    "parameters": {
+      "type": "json"
+    },
+    "publishedUrls": {
+      "type": "json"
+    },
+    "project": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::project.project",
+      "inversedBy": "finalVideos"
+    },
+    "platformTarget": {
+      "type": "enumeration",
+      "enum": [
+        "douyin",
+        "wechat",
+        "weibo",
+        "xiaohongshu",
+        "bilibili",
+        "youtube"
+      ]
+    },
+    "publishStatus": {
+      "type": "enumeration",
+      "enum": [
+        "draft",
+        "scheduled",
+        "published",
+        "failed"
+      ],
+      "default": "draft"
+    },
+    "scheduledPublishTime": {
+      "type": "datetime"
+    },
+    "engagementMetrics": {
+      "type": "json"
+    }
+  }
+}

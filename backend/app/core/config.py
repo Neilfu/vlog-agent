@@ -108,6 +108,19 @@ class Settings(BaseSettings):
     CHINA_CDN_ENABLED: bool = os.getenv("CHINA_CDN_ENABLED", "true").lower() == "true"
     CHINA_REGION_OPTIMIZATION: bool = os.getenv("CHINA_REGION_OPTIMIZATION", "true").lower() == "true"
 
+    # Strapi CMS配置
+    STRAPI_URL: str = os.getenv("STRAPI_URL", "http://localhost:1337")
+    STRAPI_API_TOKEN: str = os.getenv("STRAPI_API_TOKEN", "")
+    STRAPI_WEBHOOK_SECRET: str = os.getenv("STRAPI_WEBHOOK_SECRET", "")
+    STRAPI_SYNC_ENABLED: bool = os.getenv("STRAPI_SYNC_ENABLED", "true").lower() == "true"
+    STRAPI_AUTO_SYNC: bool = os.getenv("STRAPI_AUTO_SYNC", "true").lower() == "true"
+    STRAPI_SYNC_INTERVAL: int = int(os.getenv("STRAPI_SYNC_INTERVAL", "300"))  # 5分钟
+    STRAPI_REQUEST_TIMEOUT: int = int(os.getenv("STRAPI_REQUEST_TIMEOUT", "30"))
+    STRAPI_MAX_RETRIES: int = int(os.getenv("STRAPI_MAX_RETRIES", "3"))
+    STRAPI_RETRY_DELAY: float = float(os.getenv("STRAPI_RETRY_DELAY", "1.0"))
+    STRAPI_DEFAULT_LOCALE: str = os.getenv("STRAPI_DEFAULT_LOCALE", "zh-CN")
+    STRAPI_SUPPORTED_LOCALES: List[str] = os.getenv("STRAPI_SUPPORTED_LOCALES", "zh-CN,en-US").split(",")
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

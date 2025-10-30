@@ -1,0 +1,129 @@
+{
+  "kind": "collectionType",
+  "collectionName": "scripts",
+  "info": {
+    "singularName": "script",
+    "pluralName": "scripts",
+    "displayName": "Script",
+    "description": "Video scripts with Chinese content optimization"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 200,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "content": {
+      "type": "richtext",
+      "required": true,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "duration": {
+      "type": "integer",
+      "min": 5,
+      "max": 300
+    },
+    "wordCount": {
+      "type": "integer",
+      "min": 10
+    },
+    "language": {
+      "type": "enumeration",
+      "enum": [
+        "zh-CN",
+        "en-US",
+        "zh-TW"
+      ],
+      "default": "zh-CN"
+    },
+    "scenes": {
+      "type": "json",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "characters": {
+      "type": "json",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "draft",
+        "review",
+        "approved",
+        "rejected"
+      ],
+      "default": "draft"
+    },
+    "version": {
+      "type": "integer",
+      "default": 1,
+      "min": 1
+    },
+    "aiModel": {
+      "type": "string"
+    },
+    "prompt": {
+      "type": "text",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "project": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::project.project",
+      "inversedBy": "scripts"
+    },
+    "targetAudience": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "keyMessage": {
+      "type": "text",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "callToAction": {
+      "type": "text",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    }
+  }
+}
